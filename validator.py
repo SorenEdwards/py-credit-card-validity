@@ -5,15 +5,6 @@ DATABASE_FILE = "cardtype.db"
 MAX_CARD_LENGTH = 19
 MIN_CARD_LENGTH = 8
 
-# class LuhnValidator:
-#     @staticmethod
-#     def validate(card: list[int]):
-#         rev_card = card.get_number()[::-1]
-#         return (
-#             sum(rev_card[0::2])
-#             + sum(sum(divmod(d * 2, 10)) for d in rev_card[1::2])
-#         ) % 10 == 0
-
 
 class CardNumber:
     card_number: list[int]
@@ -69,26 +60,12 @@ class CCType:
 class CCMasterCard(CCType):
     type = "MasterCard"
 
-    # def __new__(cls):
-    #     if cls._instance is None:
-    #         print("Creating the object")
-    #         cls._instance = super(CCMasterCard, cls).__new__(cls)
-    #         # Put any initialization here.
-    #     return cls._instance
-
     def validate(self):
         return True
 
 
 class CCVisa(CCType):
     type = "Visa"
-
-    # def __new__(cls):
-    #     if cls._instance is None:
-    #         print("Creating the object")
-    #         cls._instance = super(CCVisa, cls).__new__(cls)
-    #         # Put any initialization here.
-    #     return cls._instance
 
     def validate(self):
         return True
@@ -177,14 +154,16 @@ class CCValidator:
         return self.card_number.validate() and self.cctype.validate()
 
     def validate_verbose(self):
-        val_card_str = "Card Number {}: {} \n".format(
+        is_valid = self.validate()
+        val_card_str = "Card number validity for {}: {} \n".format(
             self.card_number,
             self.card_number.validate(),
         )
-        val_card_type_str = "Card Type {}: {} \n".format(
+        val_card_type_str = "Card type validity for {}: {} \n".format(
             self.cctype, self.cctype.validate()
         )
-        print(val_card_str + val_card_type_str)
+        card_is_valid_str = "Card is valid: {}\n".format(is_valid)
+        print(val_card_str + val_card_type_str + card_is_valid_str)
         return self.validate()
 
 
@@ -285,8 +264,6 @@ if __name__ == "__main__":
         card_validator = CCValidator(card)
         isValid = card_validator.validate_verbose()
 
-    false_card_number = "4111111111111111"
+    false_card_number = "4222222222222222"
     false_validator = CCValidator(false_card_number)
     valid = false_validator.validate_verbose()
-    # CCDiscovery(dis)
-    # CCDiscovery()
