@@ -17,8 +17,7 @@ class CardNumber:
         return length
 
     def __str__(self):
-        as_str = map(str, self.card_number)
-        return "".join(as_str)
+        return "".join([str(x) for x in self.card_number])
 
     def __repr__(self):
         return "Card Number: {}".format(self.card_number)
@@ -62,6 +61,9 @@ class CCType:
     def validate(self, card_number: CardNumber, cvv: str, expiration: str):
         return False
 
+    def validate_simple(self):
+        return True
+
 
 class CCMasterCard(CCType, SingletonBase):
     type = "Mastercard"
@@ -104,18 +106,17 @@ class CCTypeExtractor:
 
     def __find_type(self):
         cursor = self.db.cursor()
-        card_nums = self.card_number.get_first_two_digits()
-        card_length = len(self.card_number)
-        first_digits = str(card_nums[0]) + str(card_nums[1])
+        card_number_str = str(self.card_number)
+        # card_nums = self.card_number.get_first_two_digits()
+        # card_length = len(self.card_number)
+        # first_digits = str(card_nums[0]) + str(card_nums[1])
         cursor.execute(
-            "SELECT card_name, min_length, max_length FROM CREDIT_CARD_TYPE WHERE type_digits == ? AND ? BETWEEN min_length AND max_length;",
-            (
-                first_digits,
-                card_length,
-            ),
+            "SELECT cctt.card_name,cctt.type_digits FROM CreditCardType as cctt WHERE (? LIKE cctt.type_digits || '%') ORDER BY LENGTH(cctt.type_digits) DESC LIMIT 1",
+            (card_number_str,),
         )
         row = cursor.fetchone()
         if row:
+            print(row)
             return row[0]
         return None
 
@@ -163,89 +164,106 @@ class CCValidator:
 
 def create_card_type_tb(conn):
     conn.execute(
-        """CREATE TABLE IF NOT EXISTS CREDIT_CARD_TYPE
+        """CREATE TABLE IF NOT EXISTS CreditCardType
          (id            INT PRIMARY KEY    NOT NULL,
          card_name      TEXT    NOT NULL,
-         type_digits    CHAR(2),
+         type_digits    CHAR(6),
          min_length     INT NOT NULL,
          max_length     INT NOT NULL);"""
     )
     conn.commit()
 
 
-def create_card_length_tb(conn):
-    conn.execute(
-        """CREATE TABLE IF NOT EXISTS CREDIT_CARD_TYPE_LENGTH
-         (
-         card_name      TEXT  PRIMARY KEY  NOT NULL,
-         min_length     INT NOT NULL,
-         max_length     INT NOT NULL
-         );"""
-    )
-    conn.commit()
-
-
-def load_card_length_db(conn):
-    conn.execute(
-        "INSERT INTO CREDIT_CARD_TYPE_LENGTH (card_name,min_length,max_length) VALUES ('MASTERCARD',16,16)"
-    )
-    conn.execute(
-        "INSERT INTO CREDIT_CARD_TYPE_LENGTH (card_name,min_length,max_length) VALUES ('VISA',13,19)"
-    )
-    conn.execute(
-        "INSERT INTO CREDIT_CARD_TYPE_LENGTH (card_name,min_length,max_length) VALUES ('DISCOVERY',16,19)"
-    )
-    conn.commit()
-
-
 def load_card_type_db(conn):
     conn.execute(
-        "INSERT INTO CREDIT_CARD_TYPE (id,card_name,type_digits,min_length,max_length) VALUES (1, 'MASTERCARD', '51',16,16)"
+        "INSERT INTO CreditCardType (id,card_name,type_digits,min_length,max_length) VALUES (1, 'MASTERCARD', '51',16,16)"
     )
     conn.execute(
-        "INSERT INTO CREDIT_CARD_TYPE (id,card_name,type_digits,min_length,max_length) VALUES (2, 'MASTERCARD', '52',16,16)"
+        "INSERT INTO CreditCardType (id,card_name,type_digits,min_length,max_length) VALUES (2, 'MASTERCARD', '52',16,16)"
     )
     conn.execute(
-        "INSERT INTO CREDIT_CARD_TYPE (id,card_name,type_digits,min_length,max_length) VALUES (3, 'MASTERCARD', '53',16,16)"
+        "INSERT INTO CreditCardType (id,card_name,type_digits,min_length,max_length) VALUES (3, 'MASTERCARD', '53',16,16)"
     )
     conn.execute(
-        "INSERT INTO CREDIT_CARD_TYPE (id,card_name,type_digits,min_length,max_length) VALUES (4, 'MASTERCARD', '54',16,16)"
+        "INSERT INTO CreditCardType (id,card_name,type_digits,min_length,max_length) VALUES (4, 'MASTERCARD', '54',16,16)"
     )
     conn.execute(
-        "INSERT INTO CREDIT_CARD_TYPE (id,card_name,type_digits,min_length,max_length) VALUES (5, 'MASTERCARD', '55',16,16)"
+        "INSERT INTO CreditCardType (id,card_name,type_digits,min_length,max_length) VALUES (5, 'MASTERCARD', '55',16,16)"
     )
     conn.execute(
-        "INSERT INTO CREDIT_CARD_TYPE (id,card_name,type_digits,min_length,max_length) VALUES (6, 'VISA', '40',13,19)"
+        "INSERT INTO CreditCardType (id,card_name,type_digits,min_length,max_length) VALUES (6, 'MASTERCARD', '22',16,16)"
     )
     conn.execute(
-        "INSERT INTO CREDIT_CARD_TYPE (id,card_name,type_digits,min_length,max_length) VALUES (7, 'VISA', '41',13,19)"
+        "INSERT INTO CreditCardType (id,card_name,type_digits,min_length,max_length) VALUES (7, 'MASTERCARD', '23',16,16)"
     )
     conn.execute(
-        "INSERT INTO CREDIT_CARD_TYPE (id,card_name,type_digits,min_length,max_length) VALUES (8, 'VISA', '42',13,19)"
+        "INSERT INTO CreditCardType (id,card_name,type_digits,min_length,max_length) VALUES (8, 'MASTERCARD', '24',16,16)"
     )
     conn.execute(
-        "INSERT INTO CREDIT_CARD_TYPE (id,card_name,type_digits,min_length,max_length) VALUES (9, 'VISA', '43',13,19)"
+        "INSERT INTO CreditCardType (id,card_name,type_digits,min_length,max_length) VALUES (9, 'MASTERCARD', '25',16,16)"
     )
     conn.execute(
-        "INSERT INTO CREDIT_CARD_TYPE (id,card_name,type_digits,min_length,max_length) VALUES (10, 'VISA', '44',13,19)"
+        "INSERT INTO CreditCardType (id,card_name,type_digits,min_length,max_length) VALUES (10, 'MASTERCARD', '26',16,16)"
     )
     conn.execute(
-        "INSERT INTO CREDIT_CARD_TYPE (id,card_name,type_digits,min_length,max_length) VALUES (11, 'VISA', '45',13,19)"
+        "INSERT INTO CreditCardType (id,card_name,type_digits,min_length,max_length) VALUES (11, 'MASTERCARD', '27',16,16)"
     )
     conn.execute(
-        "INSERT INTO CREDIT_CARD_TYPE (id,card_name,type_digits,min_length,max_length) VALUES (12, 'VISA', '46',13,19)"
+        "INSERT INTO CreditCardType (id,card_name,type_digits,min_length,max_length) VALUES (15, 'VISA', '4',13,19)"
     )
     conn.execute(
-        "INSERT INTO CREDIT_CARD_TYPE (id,card_name,type_digits,min_length,max_length) VALUES (13, 'VISA', '47',13,19)"
+        "INSERT INTO CreditCardType (id,card_name,type_digits,min_length,max_length) VALUES (16, 'DISCOVERY', '60',16,19)"
     )
     conn.execute(
-        "INSERT INTO CREDIT_CARD_TYPE (id,card_name,type_digits,min_length,max_length) VALUES (14, 'VISA', '48',13,19)"
+        "INSERT INTO CreditCardType (id,card_name,type_digits,min_length,max_length) VALUES (17, 'DISCOVERY', '6011',16,19)"
     )
     conn.execute(
-        "INSERT INTO CREDIT_CARD_TYPE (id,card_name,type_digits,min_length,max_length) VALUES (15, 'VISA', '49',13,19)"
+        "INSERT INTO CreditCardType (id,card_name,type_digits,min_length,max_length) VALUES (18, 'DISCOVERY', '644',16,19)"
     )
     conn.execute(
-        "INSERT INTO CREDIT_CARD_TYPE (id,card_name,type_digits,min_length,max_length) VALUES (16, 'DISCOVERY', '60',16,19)"
+        "INSERT INTO CreditCardType (id,card_name,type_digits,min_length,max_length) VALUES (19, 'DISCOVERY', '645',16,19)"
+    )
+    conn.execute(
+        "INSERT INTO CreditCardType (id,card_name,type_digits,min_length,max_length) VALUES (20, 'DISCOVERY', '646',16,19)"
+    )
+    conn.execute(
+        "INSERT INTO CreditCardType (id,card_name,type_digits,min_length,max_length) VALUES (21, 'DISCOVERY', '647',16,19)"
+    )
+    conn.execute(
+        "INSERT INTO CreditCardType (id,card_name,type_digits,min_length,max_length) VALUES (22, 'DISCOVERY', '648',16,19)"
+    )
+    conn.execute(
+        "INSERT INTO CreditCardType (id,card_name,type_digits,min_length,max_length) VALUES (23, 'DISCOVERY', '649',16,19)"
+    )
+    conn.execute(
+        "INSERT INTO CreditCardType (id,card_name,type_digits,min_length,max_length) VALUES (24, 'DISCOVERY', '65',16,19)"
+    )
+    conn.execute(
+        "INSERT INTO CreditCardType (id,card_name,type_digits,min_length,max_length) VALUES (25, 'DISCOVERY', '6221',16,19)"
+    )
+    conn.execute(
+        "INSERT INTO CreditCardType (id,card_name,type_digits,min_length,max_length) VALUES (26, 'DISCOVERY', '6222',16,19)"
+    )
+    conn.execute(
+        "INSERT INTO CreditCardType (id,card_name,type_digits,min_length,max_length) VALUES (27, 'DISCOVERY', '6223',16,19)"
+    )
+    conn.execute(
+        "INSERT INTO CreditCardType (id,card_name,type_digits,min_length,max_length) VALUES (28, 'DISCOVERY', '6224',16,19)"
+    )
+    conn.execute(
+        "INSERT INTO CreditCardType (id,card_name,type_digits,min_length,max_length) VALUES (29, 'DISCOVERY', '6225',16,19)"
+    )
+    conn.execute(
+        "INSERT INTO CreditCardType (id,card_name,type_digits,min_length,max_length) VALUES (30, 'DISCOVERY', '6226',16,19)"
+    )
+    conn.execute(
+        "INSERT INTO CreditCardType (id,card_name,type_digits,min_length,max_length) VALUES (31, 'DISCOVERY', '6227',16,19)"
+    )
+    conn.execute(
+        "INSERT INTO CreditCardType (id,card_name,type_digits,min_length,max_length) VALUES (32, 'DISCOVERY', '6228',16,19)"
+    )
+    conn.execute(
+        "INSERT INTO CreditCardType (id,card_name,type_digits,min_length,max_length) VALUES (33, 'DISCOVERY', '6229',16,19)"
     )
     conn.commit()
 
@@ -254,8 +272,6 @@ def create_db():
     if not os.path.isfile(DATABASE_FILE):
         conn = sqlite3.connect(DATABASE_FILE)
         create_card_type_tb(conn)
-        create_card_length_tb(conn)
-        load_card_length_db(conn)
         load_card_type_db(conn)
         conn.close()
 
