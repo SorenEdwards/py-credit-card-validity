@@ -96,7 +96,7 @@ class CCProcessorExtractor:
         cursor = self.db.cursor()
         card_number_str = str(self.card_number)
         cursor.execute(
-            "SELECT cctt.card_name,cctt.processor_digits FROM CreditCardProcessor  as cctt WHERE (? LIKE cctt.processor_digits || '%') ORDER BY LENGTH(cctt.processor_digits) DESC LIMIT 1",
+            "SELECT cctt.processor_name,cctt.card_digits FROM CreditCardProcessor  as cctt WHERE (? LIKE cctt.card_digits || '%') ORDER BY LENGTH(cctt.card_digits) DESC LIMIT 1",
             (card_number_str,),
         )
         row = cursor.fetchone()
@@ -150,8 +150,8 @@ def create_card_type_tb(conn):
     conn.execute(
         """CREATE TABLE IF NOT EXISTS CreditCardProcessor 
          (id            INT PRIMARY KEY    NOT NULL,
-         card_name      TEXT    NOT NULL,
-         processor_digits    CHAR(6),
+         processor_name      TEXT    NOT NULL,
+         card_digits    CHAR(6),
          min_length     INT NOT NULL,
          max_length     INT NOT NULL);"""
     )
@@ -160,94 +160,94 @@ def create_card_type_tb(conn):
 
 def load_card_type_db(conn):
     conn.execute(
-        "INSERT INTO CreditCardProcessor  (id,card_name,processor_digits,min_length,max_length) VALUES (1, 'MASTERCARD', '51',16,16)"
+        "INSERT INTO CreditCardProcessor  (id,processor_name,card_digits,min_length,max_length) VALUES (1, 'MASTERCARD', '51',16,16)"
     )
     conn.execute(
-        "INSERT INTO CreditCardProcessor  (id,card_name,processor_digits,min_length,max_length) VALUES (2, 'MASTERCARD', '52',16,16)"
+        "INSERT INTO CreditCardProcessor  (id,processor_name,card_digits,min_length,max_length) VALUES (2, 'MASTERCARD', '52',16,16)"
     )
     conn.execute(
-        "INSERT INTO CreditCardProcessor  (id,card_name,processor_digits,min_length,max_length) VALUES (3, 'MASTERCARD', '53',16,16)"
+        "INSERT INTO CreditCardProcessor  (id,processor_name,card_digits,min_length,max_length) VALUES (3, 'MASTERCARD', '53',16,16)"
     )
     conn.execute(
-        "INSERT INTO CreditCardProcessor  (id,card_name,processor_digits,min_length,max_length) VALUES (4, 'MASTERCARD', '54',16,16)"
+        "INSERT INTO CreditCardProcessor  (id,processor_name,card_digits,min_length,max_length) VALUES (4, 'MASTERCARD', '54',16,16)"
     )
     conn.execute(
-        "INSERT INTO CreditCardProcessor  (id,card_name,processor_digits,min_length,max_length) VALUES (5, 'MASTERCARD', '55',16,16)"
+        "INSERT INTO CreditCardProcessor  (id,processor_name,card_digits,min_length,max_length) VALUES (5, 'MASTERCARD', '55',16,16)"
     )
     conn.execute(
-        "INSERT INTO CreditCardProcessor  (id,card_name,processor_digits,min_length,max_length) VALUES (6, 'MASTERCARD', '22',16,16)"
+        "INSERT INTO CreditCardProcessor  (id,processor_name,card_digits,min_length,max_length) VALUES (6, 'MASTERCARD', '22',16,16)"
     )
     conn.execute(
-        "INSERT INTO CreditCardProcessor  (id,card_name,processor_digits,min_length,max_length) VALUES (7, 'MASTERCARD', '23',16,16)"
+        "INSERT INTO CreditCardProcessor  (id,processor_name,card_digits,min_length,max_length) VALUES (7, 'MASTERCARD', '23',16,16)"
     )
     conn.execute(
-        "INSERT INTO CreditCardProcessor  (id,card_name,processor_digits,min_length,max_length) VALUES (8, 'MASTERCARD', '24',16,16)"
+        "INSERT INTO CreditCardProcessor  (id,processor_name,card_digits,min_length,max_length) VALUES (8, 'MASTERCARD', '24',16,16)"
     )
     conn.execute(
-        "INSERT INTO CreditCardProcessor  (id,card_name,processor_digits,min_length,max_length) VALUES (9, 'MASTERCARD', '25',16,16)"
+        "INSERT INTO CreditCardProcessor  (id,processor_name,card_digits,min_length,max_length) VALUES (9, 'MASTERCARD', '25',16,16)"
     )
     conn.execute(
-        "INSERT INTO CreditCardProcessor  (id,card_name,processor_digits,min_length,max_length) VALUES (10, 'MASTERCARD', '26',16,16)"
+        "INSERT INTO CreditCardProcessor  (id,processor_name,card_digits,min_length,max_length) VALUES (10, 'MASTERCARD', '26',16,16)"
     )
     conn.execute(
-        "INSERT INTO CreditCardProcessor  (id,card_name,processor_digits,min_length,max_length) VALUES (11, 'MASTERCARD', '27',16,16)"
+        "INSERT INTO CreditCardProcessor  (id,processor_name,card_digits,min_length,max_length) VALUES (11, 'MASTERCARD', '27',16,16)"
     )
     conn.execute(
-        "INSERT INTO CreditCardProcessor  (id,card_name,processor_digits,min_length,max_length) VALUES (15, 'VISA', '4',13,19)"
+        "INSERT INTO CreditCardProcessor  (id,processor_name,card_digits,min_length,max_length) VALUES (15, 'VISA', '4',13,19)"
     )
     conn.execute(
-        "INSERT INTO CreditCardProcessor  (id,card_name,processor_digits,min_length,max_length) VALUES (16, 'DISCOVERY', '60',16,19)"
+        "INSERT INTO CreditCardProcessor  (id,processor_name,card_digits,min_length,max_length) VALUES (16, 'DISCOVERY', '60',16,19)"
     )
     conn.execute(
-        "INSERT INTO CreditCardProcessor  (id,card_name,processor_digits,min_length,max_length) VALUES (17, 'DISCOVERY', '6011',16,19)"
+        "INSERT INTO CreditCardProcessor  (id,processor_name,card_digits,min_length,max_length) VALUES (17, 'DISCOVERY', '6011',16,19)"
     )
     conn.execute(
-        "INSERT INTO CreditCardProcessor  (id,card_name,processor_digits,min_length,max_length) VALUES (18, 'DISCOVERY', '644',16,19)"
+        "INSERT INTO CreditCardProcessor  (id,processor_name,card_digits,min_length,max_length) VALUES (18, 'DISCOVERY', '644',16,19)"
     )
     conn.execute(
-        "INSERT INTO CreditCardProcessor  (id,card_name,processor_digits,min_length,max_length) VALUES (19, 'DISCOVERY', '645',16,19)"
+        "INSERT INTO CreditCardProcessor  (id,processor_name,card_digits,min_length,max_length) VALUES (19, 'DISCOVERY', '645',16,19)"
     )
     conn.execute(
-        "INSERT INTO CreditCardProcessor  (id,card_name,processor_digits,min_length,max_length) VALUES (20, 'DISCOVERY', '646',16,19)"
+        "INSERT INTO CreditCardProcessor  (id,processor_name,card_digits,min_length,max_length) VALUES (20, 'DISCOVERY', '646',16,19)"
     )
     conn.execute(
-        "INSERT INTO CreditCardProcessor  (id,card_name,processor_digits,min_length,max_length) VALUES (21, 'DISCOVERY', '647',16,19)"
+        "INSERT INTO CreditCardProcessor  (id,processor_name,card_digits,min_length,max_length) VALUES (21, 'DISCOVERY', '647',16,19)"
     )
     conn.execute(
-        "INSERT INTO CreditCardProcessor  (id,card_name,processor_digits,min_length,max_length) VALUES (22, 'DISCOVERY', '648',16,19)"
+        "INSERT INTO CreditCardProcessor  (id,processor_name,card_digits,min_length,max_length) VALUES (22, 'DISCOVERY', '648',16,19)"
     )
     conn.execute(
-        "INSERT INTO CreditCardProcessor  (id,card_name,processor_digits,min_length,max_length) VALUES (23, 'DISCOVERY', '649',16,19)"
+        "INSERT INTO CreditCardProcessor  (id,processor_name,card_digits,min_length,max_length) VALUES (23, 'DISCOVERY', '649',16,19)"
     )
     conn.execute(
-        "INSERT INTO CreditCardProcessor  (id,card_name,processor_digits,min_length,max_length) VALUES (24, 'DISCOVERY', '65',16,19)"
+        "INSERT INTO CreditCardProcessor  (id,processor_name,card_digits,min_length,max_length) VALUES (24, 'DISCOVERY', '65',16,19)"
     )
     conn.execute(
-        "INSERT INTO CreditCardProcessor  (id,card_name,processor_digits,min_length,max_length) VALUES (25, 'DISCOVERY', '6221',16,19)"
+        "INSERT INTO CreditCardProcessor  (id,processor_name,card_digits,min_length,max_length) VALUES (25, 'DISCOVERY', '6221',16,19)"
     )
     conn.execute(
-        "INSERT INTO CreditCardProcessor  (id,card_name,processor_digits,min_length,max_length) VALUES (26, 'DISCOVERY', '6222',16,19)"
+        "INSERT INTO CreditCardProcessor  (id,processor_name,card_digits,min_length,max_length) VALUES (26, 'DISCOVERY', '6222',16,19)"
     )
     conn.execute(
-        "INSERT INTO CreditCardProcessor  (id,card_name,processor_digits,min_length,max_length) VALUES (27, 'DISCOVERY', '6223',16,19)"
+        "INSERT INTO CreditCardProcessor  (id,processor_name,card_digits,min_length,max_length) VALUES (27, 'DISCOVERY', '6223',16,19)"
     )
     conn.execute(
-        "INSERT INTO CreditCardProcessor  (id,card_name,processor_digits,min_length,max_length) VALUES (28, 'DISCOVERY', '6224',16,19)"
+        "INSERT INTO CreditCardProcessor  (id,processor_name,card_digits,min_length,max_length) VALUES (28, 'DISCOVERY', '6224',16,19)"
     )
     conn.execute(
-        "INSERT INTO CreditCardProcessor  (id,card_name,processor_digits,min_length,max_length) VALUES (29, 'DISCOVERY', '6225',16,19)"
+        "INSERT INTO CreditCardProcessor  (id,processor_name,card_digits,min_length,max_length) VALUES (29, 'DISCOVERY', '6225',16,19)"
     )
     conn.execute(
-        "INSERT INTO CreditCardProcessor  (id,card_name,processor_digits,min_length,max_length) VALUES (30, 'DISCOVERY', '6226',16,19)"
+        "INSERT INTO CreditCardProcessor  (id,processor_name,card_digits,min_length,max_length) VALUES (30, 'DISCOVERY', '6226',16,19)"
     )
     conn.execute(
-        "INSERT INTO CreditCardProcessor  (id,card_name,processor_digits,min_length,max_length) VALUES (31, 'DISCOVERY', '6227',16,19)"
+        "INSERT INTO CreditCardProcessor  (id,processor_name,card_digits,min_length,max_length) VALUES (31, 'DISCOVERY', '6227',16,19)"
     )
     conn.execute(
-        "INSERT INTO CreditCardProcessor  (id,card_name,processor_digits,min_length,max_length) VALUES (32, 'DISCOVERY', '6228',16,19)"
+        "INSERT INTO CreditCardProcessor  (id,processor_name,card_digits,min_length,max_length) VALUES (32, 'DISCOVERY', '6228',16,19)"
     )
     conn.execute(
-        "INSERT INTO CreditCardProcessor  (id,card_name,processor_digits,min_length,max_length) VALUES (33, 'DISCOVERY', '6229',16,19)"
+        "INSERT INTO CreditCardProcessor  (id,processor_name,card_digits,min_length,max_length) VALUES (33, 'DISCOVERY', '6229',16,19)"
     )
     conn.commit()
 
