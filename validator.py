@@ -40,12 +40,18 @@ class CardNumber:
         return int(len(self.card_number))
 
 
+class SingletonBase(object):
+    def __new__(type):
+        if not "_the_instance" in type.__dict__:
+            type._the_instance = object.__new__(type)
+        return type._the_instance
+
+
 class CCType:
     type: str
-    card_number: CardNumber
 
-    def __init__(self, card_number: CardNumber):
-        self.card_number = card_number
+    # def __init__(self, card_number: CardNumber):
+    #     self.card_number = card_number
 
     def __str__(self):
         return self.type
@@ -53,50 +59,35 @@ class CCType:
     def __repr__(self):
         return "The card type is: {}".format(self.__str__())
 
-    def validate(self):
-        return
+    def validate(self, card_number: CardNumber, cvv: str, expiration: str):
+        return False
 
 
-class CCMasterCard(CCType):
-    type = "MasterCard"
+class CCMasterCard(CCType, SingletonBase):
+    type = "Mastercard"
 
-    def validate(self):
+    def validate(self, card_number: CardNumber, cvv: str, expiration: str):
         return True
 
 
-class CCVisa(CCType):
+class CCVisa(CCType, SingletonBase):
     type = "Visa"
 
-    def validate(self):
+    def validate(self, card_number: CardNumber, cvv: str, expiration: str):
         return True
 
 
-class CCDiscovery(CCType):
+class CCDiscovery(CCType, SingletonBase):
     type = "Discovery"
 
-    # def __new__(cls):
-    #     if cls._instance is None:
-    #         print("Creating the object")
-    #         cls._instance = super(CCDiscovery, cls).__new__(cls)
-    #         # Put any initialization here.
-    #     return cls._instance
-
-    def validate(self):
+    def validate(self, card_number: CardNumber, cvv: str, expiration: str):
         return True
 
 
 class CCUnknown(CCType):
     type = "Unknown"
 
-    # def __new__(cls):
-    #     if cls._instance is None:
-    #         print("Creating the object")
-    #         cls._instance = super(CCUnknown, cls).__new__(cls)
-    #         # Put any initialization here.
-
-    #     return cls._instance
-
-    def validate(self):
+    def validate(self, card_number: CardNumber, cvv: str, expiration: str):
         return False
 
 
@@ -132,13 +123,13 @@ class CCTypeExtractor:
         cctype = self.__find_type()
         match cctype:
             case "VISA":
-                return CCVisa(self.card_number)
+                return CCVisa()
             case "MASTERCARD":
-                return CCMasterCard(self.card_number)
+                return CCMasterCard()
             case "DISCOVERY":
-                return CCDiscovery(self.card_number)
+                return CCDiscovery()
             case _:
-                return CCUnknown(self.card_number)
+                return CCUnknown()
 
 
 class CCValidator:
@@ -151,7 +142,9 @@ class CCValidator:
         self.cctype = type_extractor.find()
 
     def validate(self):
-        return self.card_number.validate() and self.cctype.validate()
+        return self.card_number.validate() and self.cctype.validate(
+            self.card_number, "445", "hi"
+        )
 
     def validate_verbose(self):
         is_valid = self.validate()
@@ -160,14 +153,15 @@ class CCValidator:
             self.card_number.validate(),
         )
         val_card_type_str = "Card type validity for {}: {} \n".format(
-            self.cctype, self.cctype.validate()
+            self.cctype,
+            self.cctype.validate(self.card_number, "445", "hi"),
         )
         card_is_valid_str = "Card is valid: {}\n".format(is_valid)
         print(val_card_str + val_card_type_str + card_is_valid_str)
         return self.validate()
 
 
-def load_card_type_db(conn):
+def create_card_type_tb(conn):
     conn.execute(
         """CREATE TABLE IF NOT EXISTS CREDIT_CARD_TYPE
          (id            INT PRIMARY KEY    NOT NULL,
@@ -176,6 +170,35 @@ def load_card_type_db(conn):
          min_length     INT NOT NULL,
          max_length     INT NOT NULL);"""
     )
+    conn.commit()
+
+
+def create_card_length_tb(conn):
+    conn.execute(
+        """CREATE TABLE IF NOT EXISTS CREDIT_CARD_TYPE_LENGTH
+         (
+         card_name      TEXT  PRIMARY KEY  NOT NULL,
+         min_length     INT NOT NULL,
+         max_length     INT NOT NULL
+         );"""
+    )
+    conn.commit()
+
+
+def load_card_length_db(conn):
+    conn.execute(
+        "INSERT INTO CREDIT_CARD_TYPE_LENGTH (card_name,min_length,max_length) VALUES ('MASTERCARD',16,16)"
+    )
+    conn.execute(
+        "INSERT INTO CREDIT_CARD_TYPE_LENGTH (card_name,min_length,max_length) VALUES ('VISA',13,19)"
+    )
+    conn.execute(
+        "INSERT INTO CREDIT_CARD_TYPE_LENGTH (card_name,min_length,max_length) VALUES ('DISCOVERY',16,19)"
+    )
+    conn.commit()
+
+
+def load_card_type_db(conn):
     conn.execute(
         "INSERT INTO CREDIT_CARD_TYPE (id,card_name,type_digits,min_length,max_length) VALUES (1, 'MASTERCARD', '51',16,16)"
     )
@@ -227,12 +250,18 @@ def load_card_type_db(conn):
     conn.commit()
 
 
-if __name__ == "__main__":
+def create_db():
     if not os.path.isfile(DATABASE_FILE):
         conn = sqlite3.connect(DATABASE_FILE)
+        create_card_type_tb(conn)
+        create_card_length_tb(conn)
+        load_card_length_db(conn)
         load_card_type_db(conn)
         conn.close()
 
+
+if __name__ == "__main__":
+    create_db()
     visa_cards = [
         "4556223722828538",
         "4556801884892960",
