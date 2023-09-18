@@ -5,17 +5,8 @@ DATABASE_FILE = "cardtype.db"
 MAX_CARD_LENGTH = 19
 MIN_CARD_LENGTH = 8
 
-# class LuhnValidator:
-#     @staticmethod
-#     def validate(card: list[int]):
-#         rev_card = card.get_number()[::-1]
-#         return (
-#             sum(rev_card[0::2])
-#             + sum(sum(divmod(d * 2, 10)) for d in rev_card[1::2])
-#         ) % 10 == 0
 
-
-class CardNumber:
+class CCNumber:
     card_number: list[int]
 
     def __init__(self, card_number):
@@ -26,17 +17,10 @@ class CardNumber:
         return length
 
     def __str__(self):
-        as_str = map(str, self.card_number)
-        return "".join(as_str)
+        return "".join([str(x) for x in self.card_number])
 
     def __repr__(self):
         return "Card Number: {}".format(self.card_number)
-
-    def get_number(self):
-        return self.card_number
-
-    def get_first_two_digits(self):
-        return self.card_number[0:2]
 
     def validate(self):
         rev_card = self.card_number[::-1]
@@ -45,20 +29,16 @@ class CardNumber:
             + sum(sum(divmod(d * 2, 10)) for d in rev_card[1::2])
         ) % 10 == 0
 
-    def length(self):
-        return int(len(self.card_number))
+
+class SingletonBase(object):
+    def __new__(type):
+        if not "_the_instance" in type.__dict__:
+            type._the_instance = object.__new__(type)
+        return type._the_instance
 
 
-class CCType:
+class CCProcessor:
     type: str
-    card_number: CardNumber
-    valid: bool
-
-    def __init__(self, card_number: CardNumber):
-        self.card_number = card_number
-        type_extractor = CCTypeExtractor(self.card_number)
-        self.type = type_extractor.find()
-        self.valid = self.type != "Unknown"
 
     def __str__(self):
         return self.type
@@ -66,159 +46,222 @@ class CCType:
     def __repr__(self):
         return "The card type is: {}".format(self.__str__())
 
-    def validate(self):
-        return self.valid
+    def validate(self, card_number: CCNumber, cvv: str, expiration: str):
+        return False
+
+    def validate_simple(self):
+        return True
 
 
-class CCMasterCard(CCType):
-    type = "MasterCard"
+class CCMasterCard(CCProcessor, SingletonBase):
+    type = "Mastercard"
+
+    def validate(self, card_number: CCNumber, cvv: str, expiration: str):
+        return True
 
 
-class CCVisa(CCType):
+class CCVisa(CCProcessor, SingletonBase):
     type = "Visa"
 
+    def validate(self, card_number: CCNumber, cvv: str, expiration: str):
+        return True
 
-class CCDiscovery(CCType):
+
+class CCDiscovery(CCProcessor, SingletonBase):
     type = "Discovery"
 
+    def validate(self, card_number: CCNumber, cvv: str, expiration: str):
+        return True
 
-class CCUnknown(CCType):
+
+class CCUnknown(CCProcessor):
     type = "Unknown"
 
-    def validate(self):
+    def validate(self, card_number: CCNumber, cvv: str, expiration: str):
         return False
 
 
-class CCTypeExtractor:
+class CCProcessorExtractor:
     db: sqlite3.Connection
-    card_number: CardNumber
+    card_number: CCNumber
 
-    def __init__(self, card_number: CardNumber):
+    def __init__(self, card_number: CCNumber):
         self.db = sqlite3.connect(DATABASE_FILE)
         self.card_number = card_number
 
     def __del__(self):
         self.db.close()
 
-    def find(self):
+    def __find_type(self):
         cursor = self.db.cursor()
-        card_nums = self.card_number.get_first_two_digits()
-        card_length = len(self.card_number)
-        first_digits = str(card_nums[0]) + str(card_nums[1])
+        card_number_str = str(self.card_number)
         cursor.execute(
-            "SELECT card_name, min_length, max_length FROM CREDIT_CARD_TYPE WHERE type_digits == ? AND ? BETWEEN min_length AND max_length;",
-            (
-                first_digits,
-                card_length,
-            ),
+            "SELECT cctt.processor_name,cctt.card_digits FROM CreditCardProcessor  as cctt WHERE (? LIKE cctt.card_digits || '%') ORDER BY LENGTH(cctt.card_digits) DESC LIMIT 1",
+            (card_number_str,),
         )
         row = cursor.fetchone()
         if row:
             return row[0]
-        return "Unknown"
+        return None
 
-    # def find(self):
-    #     cctype = self.__first_digits_query()
-    #     match cctype:
-    #         case "VISA":
-    #             return CCVisa(self.card_number)
-    #         case "MASTERCARD":
-    #             return CCMasterCard(self.card_number)
-    #         case "DISCOVERY":
-    #             return CCDiscovery(self.card_number)
-    #         case _:
-    #             return CCUnknown(self.card_number)
+    def find(self):
+        CCProcessor = self.__find_type()
+        match CCProcessor:
+            case "VISA":
+                return CCVisa()
+            case "MASTERCARD":
+                return CCMasterCard()
+            case "DISCOVERY":
+                return CCDiscovery()
+            case _:
+                return CCUnknown()
 
 
 class CCValidator:
-    card_number: CardNumber
-    cctype: CCType
+    card_number: CCNumber
+    CCProcessor: CCProcessor
 
     def __init__(self, card_number):
-        self.card_number = CardNumber(card_number)
-        self.cctype = CCType(self.card_number)
+        self.card_number = CCNumber(card_number)
+        type_extractor = CCProcessorExtractor(self.card_number)
+        self.CCProcessor = type_extractor.find()
 
     def validate(self):
-        return self.card_number.validate() and self.cctype.validate()
+        return self.card_number.validate() and self.CCProcessor.validate(
+            self.card_number, "445", "hi"
+        )
 
     def validate_verbose(self):
-        val_card_str = "Card Number {}: {} \n".format(
+        is_valid = self.validate()
+        val_card_str = "Card number validity for {}: {} \n".format(
             self.card_number,
             self.card_number.validate(),
         )
-        val_card_type_str = "Card Type {}: {} \n".format(
-            self.cctype, self.cctype.validate()
+        val_card_type_str = "Card type validity for {}: {} \n".format(
+            self.CCProcessor,
+            self.CCProcessor.validate(self.card_number, "445", "hi"),
         )
-        print(val_card_str + val_card_type_str)
+        card_is_valid_str = "Card is valid: {}\n".format(is_valid)
+        print(val_card_str + val_card_type_str + card_is_valid_str)
         return self.validate()
 
 
-def load_card_type_db(conn):
+def create_card_type_tb(conn):
     conn.execute(
-        """CREATE TABLE IF NOT EXISTS CREDIT_CARD_TYPE
+        """CREATE TABLE IF NOT EXISTS CreditCardProcessor 
          (id            INT PRIMARY KEY    NOT NULL,
-         card_name      TEXT    NOT NULL,
-         type_digits    CHAR(2),
+         processor_name      TEXT    NOT NULL,
+         card_digits    CHAR(6),
          min_length     INT NOT NULL,
          max_length     INT NOT NULL);"""
-    )
-    conn.execute(
-        "INSERT INTO CREDIT_CARD_TYPE (id,card_name,type_digits,min_length,max_length) VALUES (1, 'MASTERCARD', '51',16,16)"
-    )
-    conn.execute(
-        "INSERT INTO CREDIT_CARD_TYPE (id,card_name,type_digits,min_length,max_length) VALUES (2, 'MASTERCARD', '52',16,16)"
-    )
-    conn.execute(
-        "INSERT INTO CREDIT_CARD_TYPE (id,card_name,type_digits,min_length,max_length) VALUES (3, 'MASTERCARD', '53',16,16)"
-    )
-    conn.execute(
-        "INSERT INTO CREDIT_CARD_TYPE (id,card_name,type_digits,min_length,max_length) VALUES (4, 'MASTERCARD', '54',16,16)"
-    )
-    conn.execute(
-        "INSERT INTO CREDIT_CARD_TYPE (id,card_name,type_digits,min_length,max_length) VALUES (5, 'MASTERCARD', '55',16,16)"
-    )
-    conn.execute(
-        "INSERT INTO CREDIT_CARD_TYPE (id,card_name,type_digits,min_length,max_length) VALUES (6, 'VISA', '40',13,19)"
-    )
-    conn.execute(
-        "INSERT INTO CREDIT_CARD_TYPE (id,card_name,type_digits,min_length,max_length) VALUES (7, 'VISA', '41',13,19)"
-    )
-    conn.execute(
-        "INSERT INTO CREDIT_CARD_TYPE (id,card_name,type_digits,min_length,max_length) VALUES (8, 'VISA', '42',13,19)"
-    )
-    conn.execute(
-        "INSERT INTO CREDIT_CARD_TYPE (id,card_name,type_digits,min_length,max_length) VALUES (9, 'VISA', '43',13,19)"
-    )
-    conn.execute(
-        "INSERT INTO CREDIT_CARD_TYPE (id,card_name,type_digits,min_length,max_length) VALUES (10, 'VISA', '44',13,19)"
-    )
-    conn.execute(
-        "INSERT INTO CREDIT_CARD_TYPE (id,card_name,type_digits,min_length,max_length) VALUES (11, 'VISA', '45',13,19)"
-    )
-    conn.execute(
-        "INSERT INTO CREDIT_CARD_TYPE (id,card_name,type_digits,min_length,max_length) VALUES (12, 'VISA', '46',13,19)"
-    )
-    conn.execute(
-        "INSERT INTO CREDIT_CARD_TYPE (id,card_name,type_digits,min_length,max_length) VALUES (13, 'VISA', '47',13,19)"
-    )
-    conn.execute(
-        "INSERT INTO CREDIT_CARD_TYPE (id,card_name,type_digits,min_length,max_length) VALUES (14, 'VISA', '48',13,19)"
-    )
-    conn.execute(
-        "INSERT INTO CREDIT_CARD_TYPE (id,card_name,type_digits,min_length,max_length) VALUES (15, 'VISA', '49',13,19)"
-    )
-    conn.execute(
-        "INSERT INTO CREDIT_CARD_TYPE (id,card_name,type_digits,min_length,max_length) VALUES (16, 'DISCOVERY', '60',16,19)"
     )
     conn.commit()
 
 
-if __name__ == "__main__":
+def load_card_type_db(conn):
+    conn.execute(
+        "INSERT INTO CreditCardProcessor  (id,processor_name,card_digits,min_length,max_length) VALUES (1, 'MASTERCARD', '51',16,16)"
+    )
+    conn.execute(
+        "INSERT INTO CreditCardProcessor  (id,processor_name,card_digits,min_length,max_length) VALUES (2, 'MASTERCARD', '52',16,16)"
+    )
+    conn.execute(
+        "INSERT INTO CreditCardProcessor  (id,processor_name,card_digits,min_length,max_length) VALUES (3, 'MASTERCARD', '53',16,16)"
+    )
+    conn.execute(
+        "INSERT INTO CreditCardProcessor  (id,processor_name,card_digits,min_length,max_length) VALUES (4, 'MASTERCARD', '54',16,16)"
+    )
+    conn.execute(
+        "INSERT INTO CreditCardProcessor  (id,processor_name,card_digits,min_length,max_length) VALUES (5, 'MASTERCARD', '55',16,16)"
+    )
+    conn.execute(
+        "INSERT INTO CreditCardProcessor  (id,processor_name,card_digits,min_length,max_length) VALUES (6, 'MASTERCARD', '22',16,16)"
+    )
+    conn.execute(
+        "INSERT INTO CreditCardProcessor  (id,processor_name,card_digits,min_length,max_length) VALUES (7, 'MASTERCARD', '23',16,16)"
+    )
+    conn.execute(
+        "INSERT INTO CreditCardProcessor  (id,processor_name,card_digits,min_length,max_length) VALUES (8, 'MASTERCARD', '24',16,16)"
+    )
+    conn.execute(
+        "INSERT INTO CreditCardProcessor  (id,processor_name,card_digits,min_length,max_length) VALUES (9, 'MASTERCARD', '25',16,16)"
+    )
+    conn.execute(
+        "INSERT INTO CreditCardProcessor  (id,processor_name,card_digits,min_length,max_length) VALUES (10, 'MASTERCARD', '26',16,16)"
+    )
+    conn.execute(
+        "INSERT INTO CreditCardProcessor  (id,processor_name,card_digits,min_length,max_length) VALUES (11, 'MASTERCARD', '27',16,16)"
+    )
+    conn.execute(
+        "INSERT INTO CreditCardProcessor  (id,processor_name,card_digits,min_length,max_length) VALUES (15, 'VISA', '4',13,19)"
+    )
+    conn.execute(
+        "INSERT INTO CreditCardProcessor  (id,processor_name,card_digits,min_length,max_length) VALUES (16, 'DISCOVERY', '60',16,19)"
+    )
+    conn.execute(
+        "INSERT INTO CreditCardProcessor  (id,processor_name,card_digits,min_length,max_length) VALUES (17, 'DISCOVERY', '6011',16,19)"
+    )
+    conn.execute(
+        "INSERT INTO CreditCardProcessor  (id,processor_name,card_digits,min_length,max_length) VALUES (18, 'DISCOVERY', '644',16,19)"
+    )
+    conn.execute(
+        "INSERT INTO CreditCardProcessor  (id,processor_name,card_digits,min_length,max_length) VALUES (19, 'DISCOVERY', '645',16,19)"
+    )
+    conn.execute(
+        "INSERT INTO CreditCardProcessor  (id,processor_name,card_digits,min_length,max_length) VALUES (20, 'DISCOVERY', '646',16,19)"
+    )
+    conn.execute(
+        "INSERT INTO CreditCardProcessor  (id,processor_name,card_digits,min_length,max_length) VALUES (21, 'DISCOVERY', '647',16,19)"
+    )
+    conn.execute(
+        "INSERT INTO CreditCardProcessor  (id,processor_name,card_digits,min_length,max_length) VALUES (22, 'DISCOVERY', '648',16,19)"
+    )
+    conn.execute(
+        "INSERT INTO CreditCardProcessor  (id,processor_name,card_digits,min_length,max_length) VALUES (23, 'DISCOVERY', '649',16,19)"
+    )
+    conn.execute(
+        "INSERT INTO CreditCardProcessor  (id,processor_name,card_digits,min_length,max_length) VALUES (24, 'DISCOVERY', '65',16,19)"
+    )
+    conn.execute(
+        "INSERT INTO CreditCardProcessor  (id,processor_name,card_digits,min_length,max_length) VALUES (25, 'DISCOVERY', '6221',16,19)"
+    )
+    conn.execute(
+        "INSERT INTO CreditCardProcessor  (id,processor_name,card_digits,min_length,max_length) VALUES (26, 'DISCOVERY', '6222',16,19)"
+    )
+    conn.execute(
+        "INSERT INTO CreditCardProcessor  (id,processor_name,card_digits,min_length,max_length) VALUES (27, 'DISCOVERY', '6223',16,19)"
+    )
+    conn.execute(
+        "INSERT INTO CreditCardProcessor  (id,processor_name,card_digits,min_length,max_length) VALUES (28, 'DISCOVERY', '6224',16,19)"
+    )
+    conn.execute(
+        "INSERT INTO CreditCardProcessor  (id,processor_name,card_digits,min_length,max_length) VALUES (29, 'DISCOVERY', '6225',16,19)"
+    )
+    conn.execute(
+        "INSERT INTO CreditCardProcessor  (id,processor_name,card_digits,min_length,max_length) VALUES (30, 'DISCOVERY', '6226',16,19)"
+    )
+    conn.execute(
+        "INSERT INTO CreditCardProcessor  (id,processor_name,card_digits,min_length,max_length) VALUES (31, 'DISCOVERY', '6227',16,19)"
+    )
+    conn.execute(
+        "INSERT INTO CreditCardProcessor  (id,processor_name,card_digits,min_length,max_length) VALUES (32, 'DISCOVERY', '6228',16,19)"
+    )
+    conn.execute(
+        "INSERT INTO CreditCardProcessor  (id,processor_name,card_digits,min_length,max_length) VALUES (33, 'DISCOVERY', '6229',16,19)"
+    )
+    conn.commit()
+
+
+def create_db():
     if not os.path.isfile(DATABASE_FILE):
         conn = sqlite3.connect(DATABASE_FILE)
+        create_card_type_tb(conn)
         load_card_type_db(conn)
         conn.close()
 
+
+if __name__ == "__main__":
+    create_db()
     visa_cards = [
         "4556223722828538",
         "4556801884892960",
@@ -241,15 +284,15 @@ if __name__ == "__main__":
         "6011552675304467",
     ]
 
-    all_cards = []
-    all_cards.extend(visa_cards)
-    all_cards.extend(master_cards)
-    all_cards.extend(discovery_cards)
+    all_true_cards = []
+    all_true_cards.extend(visa_cards)
+    all_true_cards.extend(master_cards)
+    all_true_cards.extend(discovery_cards)
 
-    for card in all_cards:
+    for card in all_true_cards:
         card_validator = CCValidator(card)
         isValid = card_validator.validate_verbose()
 
-    false_card_number = "6022222222222222"
+    false_card_number = "4222222222222222"
     false_validator = CCValidator(false_card_number)
     valid = false_validator.validate_verbose()
