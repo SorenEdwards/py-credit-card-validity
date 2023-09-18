@@ -52,13 +52,9 @@ class CardNumber:
 class CCType:
     type: str
     card_number: CardNumber
-    valid: bool
 
     def __init__(self, card_number: CardNumber):
         self.card_number = card_number
-        type_extractor = CCTypeExtractor(self.card_number)
-        self.type = type_extractor.find()
-        self.valid = self.type != "Unknown"
 
     def __str__(self):
         return self.type
@@ -67,23 +63,61 @@ class CCType:
         return "The card type is: {}".format(self.__str__())
 
     def validate(self):
-        return self.valid
+        return
 
 
 class CCMasterCard(CCType):
     type = "MasterCard"
 
+    # def __new__(cls):
+    #     if cls._instance is None:
+    #         print("Creating the object")
+    #         cls._instance = super(CCMasterCard, cls).__new__(cls)
+    #         # Put any initialization here.
+    #     return cls._instance
+
+    def validate(self):
+        return True
+
 
 class CCVisa(CCType):
     type = "Visa"
+
+    # def __new__(cls):
+    #     if cls._instance is None:
+    #         print("Creating the object")
+    #         cls._instance = super(CCVisa, cls).__new__(cls)
+    #         # Put any initialization here.
+    #     return cls._instance
+
+    def validate(self):
+        return True
 
 
 class CCDiscovery(CCType):
     type = "Discovery"
 
+    # def __new__(cls):
+    #     if cls._instance is None:
+    #         print("Creating the object")
+    #         cls._instance = super(CCDiscovery, cls).__new__(cls)
+    #         # Put any initialization here.
+    #     return cls._instance
+
+    def validate(self):
+        return True
+
 
 class CCUnknown(CCType):
     type = "Unknown"
+
+    # def __new__(cls):
+    #     if cls._instance is None:
+    #         print("Creating the object")
+    #         cls._instance = super(CCUnknown, cls).__new__(cls)
+    #         # Put any initialization here.
+
+    #     return cls._instance
 
     def validate(self):
         return False
@@ -100,7 +134,7 @@ class CCTypeExtractor:
     def __del__(self):
         self.db.close()
 
-    def find(self):
+    def __find_type(self):
         cursor = self.db.cursor()
         card_nums = self.card_number.get_first_two_digits()
         card_length = len(self.card_number)
@@ -115,19 +149,19 @@ class CCTypeExtractor:
         row = cursor.fetchone()
         if row:
             return row[0]
-        return "Unknown"
+        return None
 
-    # def find(self):
-    #     cctype = self.__first_digits_query()
-    #     match cctype:
-    #         case "VISA":
-    #             return CCVisa(self.card_number)
-    #         case "MASTERCARD":
-    #             return CCMasterCard(self.card_number)
-    #         case "DISCOVERY":
-    #             return CCDiscovery(self.card_number)
-    #         case _:
-    #             return CCUnknown(self.card_number)
+    def find(self):
+        cctype = self.__find_type()
+        match cctype:
+            case "VISA":
+                return CCVisa(self.card_number)
+            case "MASTERCARD":
+                return CCMasterCard(self.card_number)
+            case "DISCOVERY":
+                return CCDiscovery(self.card_number)
+            case _:
+                return CCUnknown(self.card_number)
 
 
 class CCValidator:
@@ -136,7 +170,8 @@ class CCValidator:
 
     def __init__(self, card_number):
         self.card_number = CardNumber(card_number)
-        self.cctype = CCType(self.card_number)
+        type_extractor = CCTypeExtractor(self.card_number)
+        self.cctype = type_extractor.find()
 
     def validate(self):
         return self.card_number.validate() and self.cctype.validate()
@@ -241,15 +276,17 @@ if __name__ == "__main__":
         "6011552675304467",
     ]
 
-    all_cards = []
-    all_cards.extend(visa_cards)
-    all_cards.extend(master_cards)
-    all_cards.extend(discovery_cards)
+    all_true_cards = []
+    all_true_cards.extend(visa_cards)
+    all_true_cards.extend(master_cards)
+    all_true_cards.extend(discovery_cards)
 
-    for card in all_cards:
+    for card in all_true_cards:
         card_validator = CCValidator(card)
         isValid = card_validator.validate_verbose()
 
-    false_card_number = "6022222222222222"
+    false_card_number = "4111111111111111"
     false_validator = CCValidator(false_card_number)
     valid = false_validator.validate_verbose()
+    # CCDiscovery(dis)
+    # CCDiscovery()
