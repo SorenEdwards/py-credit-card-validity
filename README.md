@@ -3,7 +3,7 @@ A interview exercise for validating credit card numbers and credit card types (M
 
 ## Design Files
 - [Class Diagram](./diagrams/Class_Diagrams.png)
-- [Table Diagram](./diagrams/Database%20Diagram.png)
+- [Table Diagram](./diagrams/Database_Diagram.png)
 
 ## Setup & Tools
 Since this exercise is largely about testing raw skill, I did not want to venture in getting complex dependancies. All imports should be included in the standard library. The imports are provided below.
@@ -46,7 +46,7 @@ Card is valid: True
 - In this implementation the returning of CCMastercard,CCVisa,CCDiscovery from the CCProcessorExtractor means that based on the card number a record in the database was found and thus the type for the card is valid for Mastercard, Visa, and Discovery cards. Since this exercise is about validating card number and type using external apis to validate the card with CVV and expiration dates is beyind the scope.
 
 ## Databse Diagram
-![](./diagrams/Database%20Diagram.png)
+![](./diagrams/Database_Diagram.png)
 ### Notes on table
 #### CreditCardProcessor
 - For the purposes of this exercise there are only so many rows in the table so min and max length are included for each row. This could be normalized and the search query would need minor modification.
