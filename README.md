@@ -6,7 +6,7 @@ A interview exercise for validating credit card numbers and credit card types (M
 - [Table Diagram](./diagrams/Database%20Diagram.png)
 
 ## Setup & Tools
-Since this exercise is largely about testing raw skill, I did not want to venture in getting complex dependancies. So all imports should be included in the standard library. the imports are provided below.
+Since this exercise is largely about testing raw skill, I did not want to venture in getting complex dependancies. All imports should be included in the standard library. The imports are provided below.
 ```
 import os.path
 import re
