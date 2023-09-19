@@ -4,8 +4,6 @@ import sqlite3
 import sys
 
 DATABASE_FILE = "cardtype.db"
-MAX_CARD_LENGTH = 19
-MIN_CARD_LENGTH = 8
 
 
 class CCNumber:
@@ -55,7 +53,7 @@ class CCProcessor:
         return True
 
 
-class CCMasterCard(CCProcessor, SingletonBase):
+class CCMastercard(CCProcessor, SingletonBase):
     type = "Mastercard"
 
     def validate(self):
@@ -112,7 +110,7 @@ class CCProcessorExtractor:
             case "VISA":
                 return CCVisa()
             case "MASTERCARD":
-                return CCMasterCard()
+                return CCMastercard()
             case "DISCOVERY":
                 return CCDiscovery()
             case _:
