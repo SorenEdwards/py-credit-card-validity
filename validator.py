@@ -1,9 +1,9 @@
 import os.path
+import re
 import sqlite3
+import sys
 
 DATABASE_FILE = "cardtype.db"
-MAX_CARD_LENGTH = 19
-MIN_CARD_LENGTH = 8
 
 
 class CCNumber:
@@ -46,38 +46,38 @@ class CCProcessor:
     def __repr__(self):
         return "The card type is: {}".format(self.__str__())
 
-    def validate(self, card_number: CCNumber, cvv: str, expiration: str):
-        return False
+    # def validate(self, card_number: CCNumber, cvv: str, expiration: str):
+    #     return False
 
-    def validate_simple(self):
+    def validate(self):
         return True
 
 
-class CCMasterCard(CCProcessor, SingletonBase):
+class CCMastercard(CCProcessor, SingletonBase):
     type = "Mastercard"
 
-    def validate(self, card_number: CCNumber, cvv: str, expiration: str):
+    def validate(self):
         return True
 
 
 class CCVisa(CCProcessor, SingletonBase):
     type = "Visa"
 
-    def validate(self, card_number: CCNumber, cvv: str, expiration: str):
+    def validate(self):
         return True
 
 
 class CCDiscovery(CCProcessor, SingletonBase):
     type = "Discovery"
 
-    def validate(self, card_number: CCNumber, cvv: str, expiration: str):
+    def validate(self):
         return True
 
 
 class CCUnknown(CCProcessor):
     type = "Unknown"
 
-    def validate(self, card_number: CCNumber, cvv: str, expiration: str):
+    def validate(self):
         return False
 
 
@@ -110,7 +110,7 @@ class CCProcessorExtractor:
             case "VISA":
                 return CCVisa()
             case "MASTERCARD":
-                return CCMasterCard()
+                return CCMastercard()
             case "DISCOVERY":
                 return CCDiscovery()
             case _:
@@ -127,9 +127,7 @@ class CCValidator:
         self.CCProcessor = type_extractor.find()
 
     def validate(self):
-        return self.card_number.validate() and self.CCProcessor.validate(
-            self.card_number, "445", "hi"
-        )
+        return self.card_number.validate() and self.CCProcessor.validate()
 
     def validate_verbose(self):
         is_valid = self.validate()
@@ -139,7 +137,7 @@ class CCValidator:
         )
         val_card_type_str = "Card type validity for {}: {} \n".format(
             self.CCProcessor,
-            self.CCProcessor.validate(self.card_number, "445", "hi"),
+            self.CCProcessor.validate(),
         )
         card_is_valid_str = "Card is valid: {}\n".format(is_valid)
         print(val_card_str + val_card_type_str + card_is_valid_str)
@@ -260,8 +258,7 @@ def create_db():
         conn.close()
 
 
-if __name__ == "__main__":
-    create_db()
+def built_in_cards():
     visa_cards = [
         "4556223722828538",
         "4556801884892960",
@@ -293,6 +290,25 @@ if __name__ == "__main__":
         card_validator = CCValidator(card)
         isValid = card_validator.validate_verbose()
 
-    false_card_number = "4222222222222222"
-    false_validator = CCValidator(false_card_number)
-    valid = false_validator.validate_verbose()
+
+if __name__ == "__main__":
+    create_db()
+    args_count = len(sys.argv)
+    if args_count > 3:
+        print(f"One argument expected, got {args_count - 1}")
+        raise SystemExit(2)
+    arg = sys.argv[1]
+    print(arg)
+    if arg != "b" and arg != "c":
+        print("Unknown command")
+        raise SystemExit(2)
+
+    match arg:
+        case "b":
+            built_in_cards()
+        case "c":
+            raw_card_number = sys.argv[2]
+            isCard = re.search("[0-9]{8,19}", raw_card_number)
+            if isCard:
+                card_validator = CCValidator(raw_card_number)
+                isValid = card_validator.validate_verbose()
