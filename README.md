@@ -2,8 +2,8 @@
 A interview exercise for validating credit card numbers and credit card types (Mastercard, Discovery, and Visa).
 
 ## Design Files
-[Class Diagram](./diagrams/Class_Diagrams.png)
-[Table Diagram](./diagrams/Database%20Diagram.png)
+- [Class Diagram](./diagrams/Class_Diagrams.png)
+- [Table Diagram](./diagrams/Database%20Diagram.png)
 
 ## Setup & Tools
 Since this exercise is largely about testing raw skill, I did not want to venture in getting complex dependancies. So all imports should be included in the standard library. the imports are provided below.
